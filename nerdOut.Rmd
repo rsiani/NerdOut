@@ -12,22 +12,27 @@ library(tidyverse)
 library(viridis)
 ```
 
+### IMPORT CSV
+
 ```{r}
-DF = read.csv("LIBRARY/XLSX/FitNotes_Export.csv") %>% 
-  filter(Reps != 0 & 
+DF = read.csv("LIBRARY/XLSX/FitNotes_Export.csv") %>% # import
+  filter(Reps != 0 & # filter 1RM failed attempt
            Exercise %in% c("Decline Barbell Bench Press",
                          "Sumo Deadlift",
                          "Barbell Squat",
-                         "Overhead Press")) %>% 
-  mutate(Volume = Weight * Reps, 
+                         "Overhead Press")) %>% # select your strength metrics
+  mutate(Volume = Weight * Reps, # calculate volume
          Date = as.Date(Date, 
-                        format = "%Y-%m-%d"),
-         OneRM = Weight / ( 1.0278 - 0.0278 * Reps ),
-         Perc1RM = Weight / OneRM * 100) %>% 
-  arrange(Exercise)
+                        format = "%Y-%m-%d"), # reformat dates
+         OneRM = Weight / ( 1.0278 - 0.0278 * Reps ), # calculate 1RepMax with Brzycki's Formula (https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3525823/)
+         Perc1RM = Weight / OneRM * 100) %>% #  calculate percentage of 1RepMax used
+  arrange(Exercise) # arrange by any variable, I prefer having the exercises grouped together
+```
 
+### VISUAL
 
-ggplot(DF, aes(x = Date,
+```{r}
+ggplot(DF, aes(x = Date, 
                y = OneRM,
                color = Exercise)) +
   geom_smooth(method = lm, 
@@ -50,7 +55,5 @@ ggplot(DF, aes(x = Date,
   facet_grid(DF$Exercise) +
   scale_color_viridis(discrete = T) +
   scale_fill_viridis(discrete = T)
-
-
 ```
 
