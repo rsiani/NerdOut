@@ -10,6 +10,8 @@ knitr::opts_chunk$set(echo = TRUE)
 library(ggplot2)
 library(tidyverse)
 library(viridis)
+library(plotly)
+library(lubridate)
 ```
 
 ### IMPORT CSV
@@ -32,9 +34,9 @@ DF = read.csv("LIBRARY/XLSX/FitNotes_Export.csv") %>% # import
 ### VISUAL
 
 ```{r}
-ggplot(DF, aes(x = Date, 
-               y = OneRM,
-               color = Exercise)) +
+visual = ggplot(DF, aes(x = Date, 
+                        y = OneRM,
+                        color = Exercise)) +
   geom_smooth(method = lm, 
               aes(fill = Exercise)) +
   geom_point(aes(y = OneRM,
@@ -55,5 +57,9 @@ ggplot(DF, aes(x = Date,
   facet_grid(DF$Exercise) +
   scale_color_viridis(discrete = T) +
   scale_fill_viridis(discrete = T)
+
+visual
+
+ggplotly(visual)
 ```
 
