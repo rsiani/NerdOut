@@ -12,23 +12,31 @@ library(tidyverse)
 library(viridis)
 library(plotly)
 library(lubridate)
+library(skimr) # for descriptive statistics
+library(ggpubr)
+
+setwd("~/LIBRARY/XLSX/FitNotes/")
 ```
 
 ### IMPORT CSV
 
 ```{r}
-DF = read.csv("LIBRARY/XLSX/FitNotes_Export.csv") %>% # import
+DF = read.csv("FitNotes_Export_2020_09_18_08_47_10.csv") %>% # import
   filter(Reps != 0 & # filter 1RM failed attempt
            Exercise %in% c("Decline Barbell Bench Press",
                          "Sumo Deadlift",
                          "Barbell Squat",
-                         "Overhead Press")) %>% # select your strength metrics
-  mutate(Volume = Weight * Reps, # calculate volume
+                         "Overhead Press")) %>% # select your strength metrics 
+  select(!c(Distance, Distance.Unit, Time)) %>% 
+  mutate(Volume = `Weight..kgs.` * Reps, # calculate volume
          Date = as.Date(Date, 
                         format = "%Y-%m-%d"), # reformat dates
-         OneRM = Weight / ( 1.0278 - 0.0278 * Reps ), # calculate 1RepMax with Brzycki's Formula (https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3525823/)
-         Perc1RM = Weight / OneRM * 100) %>% #  calculate percentage of 1RepMax used
-  arrange(Exercise) # arrange by any variable, I prefer having the exercises grouped together
+         OneRM = `Weight..kgs.` / ( 1.0278 - 0.0278 * Reps ), # calculate 1RepMax with Brzycki's Formula (https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3525823/)
+         Perc1RM = `Weight..kgs.` / OneRM * 100) %>% #  calculate percentage of 1RepMax used
+  arrange(Exercise)  # arrange by any variable, I prefer having the exercises grouped together 
+
+
+skimmed = skim(DF)
 ```
 
 ### VISUAL
@@ -37,29 +45,64 @@ DF = read.csv("LIBRARY/XLSX/FitNotes_Export.csv") %>% # import
 visual = ggplot(DF, aes(x = Date, 
                         y = OneRM,
                         color = Exercise)) +
-  geom_smooth(method = lm, 
+  geom_smooth(method = "lm", 
               aes(fill = Exercise)) +
   geom_point(aes(y = OneRM,
-                 size = 1 / Reps,
-                 alpha = Perc1RM),
-             position = "jitter") +
+                 alpha = Perc1RM)) +
   theme_minimal() + 
   theme(panel.grid.minor = element_blank(),
-        axis.text.y = element_blank(),
         axis.text.x = element_text(angle = 45,
                                    vjust = 1.25,
                                    hjust = 1),
         axis.title.x = element_blank(),
-        text = element_text(size = 15)) +
+        text = element_text(size = 15),
+        legend.position = "none") +
   scale_x_date(Date, 
-               date_breaks = "1 day", 
+               date_breaks = "5 day", 
                breaks = waiver()) +
-  facet_grid(DF$Exercise) +
+  facet_wrap(DF$Exercise) +
   scale_color_viridis(discrete = T) +
   scale_fill_viridis(discrete = T)
 
 visual
 
 ggplotly(visual)
+
 ```
+
+```{r}
+
+lDF = DF %>% 
+  select(!c(Volume, Reps)) %>% 
+  pivot_longer(cols = 4:6,
+               names_to = "Metric",
+               values_to = "Value")
+
+
+visual2 = ggplot(lDF,
+                 aes(x = Metric,
+                     y = Value,
+                     fill = Exercise,
+                     alpha = 0.75)) +
+  geom_boxplot() +
+  theme_minimal() +
+  facet_wrap("Exercise")  + 
+  theme(panel.grid.minor = element_blank(),
+        axis.text.x = element_text(angle = 45,
+                                   vjust = 1.25,
+                                   hjust = 1),
+        axis.title.x = element_blank(),
+        text = element_text(size = 15)) +
+  scale_fill_viridis(discrete = T) +
+  theme(legend.position = "none")
+  
+
+
+visual2
+
+ggplotly(visual2)
+
+```
+
+
 
